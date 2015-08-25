@@ -1,0 +1,4 @@
+# aimless-shooting
+Aimless shooting algorithm in CP2K for transition path sampling
+
+For quick use type './master.cp2k' on the commmand line and press enter.
