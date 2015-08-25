@@ -1,0 +1,256 @@
+#!/bin/sh
+##!/bin/bash
+
+#SBATCH --nodes=10
+#SBATCH --ntasks=200
+#SBATCH --partition=gavoth
+#SBATCH --reservation=gavoth4
+#SBATCH --cpus-per-task=1
+#SBATCH --output=tps.out
+#SBATCH --exclusive
+#SBATCH --constraint=ib
+#SBATCH --job-name=TPS
+#SBATCH --mail-type=ALL
+#SBATCH --time=24:00:00
+
+# Aimless shooting master script for NAMD
+# This example script is for a terephthalic acid crystal in vacuum
+
+# Gregg Beckham, National Renewable Energy Laboratory,
+# Golden, CO 80202
+# gregg_beckham@nrel.gov
+
+# Baron Peters, Department of Chemical Engineering and Chemistry,
+# UC Santa Barbara, Santa Barbara, CA 93106
+# baronp@engineering.ucsb.edu
+
+# February 23, 2008 
+
+# References: Peters and Trout, JCP 2006
+# Beckham, Peters, Variankaval, Starbuck, and Trout, JACS 2007
+# Peters, Beckham, and Trout, JCP 2007
+
+# To run this script, you will need the following:
+# Initial shooting point(s): input/initial_shootpt.coor
+# and input/initial_shootpt.xsc
+
+echo "Start."
+
+# Compile the fortran scripts for basin evaluations and velocity flip
+
+module unload intel
+module unload intelmpi
+module unload mkl
+  
+module load intel/12.1
+module load intelmpi/4.1+intel-12.1
+module load mkl/10.3
+module load fftw3
+  
+CP2K=/home/oosode/software/cp2k/cp2k/exe/Linux-x86-64-sangyun/cp2k.popt
+source /home/oosode/software/plumed2-ttmetad/sourceme.sh
+
+# Number of total nodes (should be divisible by two)
+NODES=200
+NODES2=`expr $NODES / 2`
+
+
+#!!!!!!!!!!!
+#Variables!#
+#!!!!!!!!!!!
+index=1
+numpaths=500
+ranscale=32767
+halfran=`expr $ranscale - 1`
+halfran=`expr $halfran / 2`
+
+# index = counter variable for number of aimless shooting runs
+# numpaths = number of aimless shooting paths to collect
+# ranscale = maximum random integer generated on a 32-bit machine, for
+# selecting the x- or x+ shooting point.
+# halfran = half of the maximum random integer 
+
+
+# Setting up the nodelist for mpi run 
+# nproc = number of processors to run on 
+#echo "group main" > nodelist
+#echo "host " n01 >> nodelist
+#echo "host " n01 >> nodelist
+#echo "host " n01 >> nodelist
+#echo "host " n01 >> nodelist
+#echo "host " n01 >> nodelist
+#echo "host " n01 >> nodelist
+#echo "host " n01 >> nodelist
+#echo "host " n01 >> nodelist
+#nproc=8
+
+
+# Cleaning the directory of old data
+# Make sure not to overwrite information from a previous run! 
+rm -f shootpt/op*.out
+rm -f acc.txt
+rm -f basin_evals.txt
+rm -f md_rst.inp
+
+cp shootpt/blank acc.txt
+cp shootpt/blank h_basin.txt
+cp shootpt/blank basin_evals.txt
+
+#cp shootpt/blank shootpt/op1.out
+#cp shootpt/blank shootpt/op2.out
+#cp shootpt/blank shootpt/op3.out
+#cp shootpt/blank shootpt/op4.out
+#cp shootpt/blank shootpt/op5.out
+#cp shootpt/blank shootpt/op6.out
+#cp shootpt/blank shootpt/op7.out
+#cp shootpt/blank shootpt/op8.out
+
+
+# Start with a seed based on the clock time
+SEED=`date +%H%M%S`
+RANDOM=$SEED
+
+
+#Setting up the shooting point +/-dt crd files
+#This should be edited depending on the shooting point
+# NB: if you are running NPT dynamics, you will need to include 
+# xsc files with the pdbs to keep track of the lattice parameters.
+
+cp initial_trajectory/factin_hydrolysis_ts.pdb x1.pdb
+cp initial_trajectory/factin_hydrolysis_ts.pdb x2.pdb
+
+#Start loop over variable index
+while [ $index -le $numpaths ]
+do
+  
+  rm -f md_rst.org
+
+  echo "Seed velocities..."
+  python as.py -i "input/md_rst.org" -o "md_rst.org" -s $RANDOM -p shootpt.pdb 
+
+  if test $RANDOM -le $halfran
+  then
+    cp x1.pdb shootpt.pdb
+    echo $index "using x1.pdb"
+  else
+    cp x2.pdb shootpt.pdb
+    echo $index "using x2.pdb"
+  fi
+
+  #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  # Determine the order parameters at shootpt.crd with ! 
+  # an external script op_shoot.f                      ! 
+  # This is not necessary whilst AS is running.        !
+  # However, you MUST save the shooting points at      ! 
+  # every trajectory.  NEVER delete those if you plan  !
+  # to use Likelihood Max.                             !
+  #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+  #./op.out
+  
+  #cat shootpt/a.out >> shootpt/op1.out 
+  #cat shootpt/b.out >> shootpt/op2.out
+  #cat shootpt/c.out >> shootpt/op3.out
+  #cat shootpt/d.out >> shootpt/op4.out
+  #cat shootpt/e.out >> shootpt/op5.out
+  #cat shootpt/f.out >> shootpt/op6.out
+  #cat shootpt/g.out >> shootpt/op7.out
+  #cat shootpt/h.out >> shootpt/op8.out
+  
+  #! Save the shoot points!  ALWAYS DO THIS!!  
+  cp shootpt.pdb ./output/crd/$index.shootpt.pdb
+ 
+  #!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  # Do some aimless shooting !
+  #!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  echo "Run setup..."
+  mpirun -n $NODES $CP2K md_rst.org > md_rst.log
+
+  echo "Generate shooting restarts..."
+  large_steps=100
+  small_steps=5
+
+  python as.py -g $index $large_steps $small_steps -i SETUP-1.restart
+
+  mv SETUP-1.restart ./output/rst/$index.shootpt.rst
+  mv SETUP-DUMP-1.pdb ./temp_output/shootpt.coor
+
+  echo "Run dt..."
+  mpirun -n $NODES $CP2K dt.org > dt.log
+
+  mv DT.$index-DUMP-1.pdb ./output/crd/$index.dt.pdb
+  mv DT.$index-1.restart  ./output/rst/$index.dt.rst
+  mv DT.$index-pos-1.xyz  ./output/dcd/$index.dt.xyz
+
+  cp ./output/crd/$index.dt.pdb temp_output/xnew.coor
+
+  echo "Run foward/backward..."
+  mpirun -n $NODES2 $CP2K forw.org > forw.log &
+  mpirun -n $NODES2 $CP2K back.org > back.log &
+  wait
+#  exit
+
+  cp FORWARD.$index-DUMP-1.pdb ./output/crd/$index.shootpt.pdb
+  
+  #!!!!!!!!!!!!!!!!!!!!!!!
+  # Evaluate some basins !
+  #!!!!!!!!!!!!!!!!!!!!!!!
+  echo "Check basins..."
+  python as.py -c FORWARD.$index-DUMP-1.pdb BACKWARD.$index-DUMP-1.pdb
+
+  mv FORWARD.$index-DUMP-1.pdb ./output/crd/$index.forw.pdb
+  mv FORWARD.$index-1.restart  ./output/rst/$index.forw.rst
+  mv FORWARD.$index-pos-1.xyz  ./output/dcd/$index.forw.xyz
+
+  mv BACKWARD.$index-DUMP-1.pdb ./output/crd/$index.back.pdb
+  mv BACKWARD.$index-1.restart  ./output/rst/$index.back.rst
+  mv BACKWARD.$index-pos-1.xyz  ./output/dcd/$index.back.xyz
+
+  haf=`cat haf`
+  hbf=`cat hbf`
+  hab=`cat hab`
+  hbb=`cat hbb`
+  echo "haf, hbf, hab, hbb " $haf $hbf $hab $hbb
+  echo "haf, hbf, hab, hbb " $hab $hbb $haf $hbf  >> h_basin.txt
+  rm -f haf hbf hab hbb
+  incon1=`expr $haf + $hbf`
+  incon2=`expr $hab + $hbb`
+  incon=`expr $incon1 \* $incon2`
+  echo "inconclusive=0? " $incon
+  tp1=`expr $hab \* $hbf`
+  tp2=`expr $haf \* $hbb`
+  tp=`expr $tp1 + $tp2`
+  echo "tp(=1 accepted): " $tp
+
+  if test $incon -eq 0
+  then
+    echo $index " inconclusive" >> acc.txt
+  else
+    if test $tp -eq 1 # Accept the shoot
+    then 
+      echo $index " accepted" >> acc.txt
+      cp temp_output/shootpt.coor x1.pdb
+      cp temp_output/xnew.coor x2.pdb
+    else
+      if test $tp -eq 0 # Reject the shoot
+      then
+        echo $index " rejected" >> acc.txt
+      fi
+    fi
+  fi
+
+#  mv shootpt.pdb output/crd/$index.shootpt.pdb
+#  mv temp_output/x+.coor output/crd/$index.x+.pdb
+#  mv temp_output/x-.coor output/crd/$index.x-.pdb
+
+#  mv output/dcd/back.dcd output/dcd/$index.back.dcd
+#  mv output/dcd/forw.dcd output/dcd/$index.forw.dcd
+
+  rm FORWARD* BACKWARD* DT* SETUP*
+
+  echo "index (reported at the end!) " $index
+  echo " "
+  index=`expr $index + 1`
+  echo $index
+done
+
