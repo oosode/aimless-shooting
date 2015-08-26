@@ -1,0 +1,25 @@
+# Ignore these files in this directory
+.DS_Store
+
+tps.out
+
+*pdb
+
+haf
+hab
+hbf
+hbb
+
+basin_evals.txt
+acc.txt
+h_basin.txt
+
+FORWARD*
+BACKWARD*
+SETUP*
+DT*
+
+dt*
+md_rst*
+forw*
+back*

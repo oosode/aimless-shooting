@@ -125,6 +125,14 @@ def distance(a,b):
 
     return math.sqrt(d)
 
+def geomean(vals):
+    
+    n=1.0
+    for val in vals:
+	n *= val
+
+    return math.pow(n,1.0/float(len(vals)))
+
 def CoordinationNumber(a,b,r0):
 
     r = distance(a,b)
@@ -184,20 +192,60 @@ def checkADP(atoms):
         if atom[1]=="O" and atom[0]!=5868 and atom[0]!=5869 and atom[0]!=5870:
             Owater.append([atom[2],atom[3],atom[4]])
 
+    Hwater=[] # all hydrogens
+    for atom in atoms:
+        if atom[1]=="H":
+	    Hwater.append([atom[2],atom[3],atom[4]])
+
+    # find oxygen closest to the gamma phosphorous 
+    # excluding the gamma oxygens for calculation
+    # of the coordination number of gamma oxygens
+    minimum=[0,1e10] # minimum distance [id,distance]
+    for atom in atoms:
+	if atom[1]=="O" and atom[0]!=5872 and atom[0]!=5873 and atom[0]!=5874:
+            tmp=distance(Pgamma,[atom[2],atom[3],atom[4]])
+	    if tmp<minimum[1]:
+	        minimum[1]=tmp
+	        minimum[0]=atom[0]
+
+    Ogamma=[]
+    for n in [5872,5873,5874,minimum[0]]:
+        Ogamma.append([[i for i in atoms if i[0] == n][0][2], \
+                       [i for i in atoms if i[0] == n][0][3], \
+                       [i for i in atoms if i[0] == n][0][4]])
+             
+
+    # determine parameters 
+
+    # coordination number between gamma phosphorous
+    # and beta oxygens.
     c1=[]
     for o in Obeta:
         c1.append(CoordinationNumber(o,Pgamma,2.38))
 
+    # coordination number between gamma phosphorous
+    # and other oxygens.
     c2=[]
     for o in Owater:
         c2.append(CoordinationNumber(o,Pgamma,2.38))
- #   print heapq.nlargest(5,c2)
+    
+    # coordination number of gamma oxygens and all
+    # other hydrogens
+    c3=[[]for i in range(4)]
+    for i,o in enumerate(Ogamma):
+        for h in Hwater:
+	    c3[i].append(CoordinationNumber(h,o,1.2))
+    tmp=[]	    
+    for c in c3:
+        tmp.append(sum(c))
+    print tmp
+    tmp=heapq.nlargest(2,tmp)
 
     isADP=0
-    if sum(c1)<0.5 and sum(c2)>3.7:
+    if sum(c1)<0.5 and sum(c2)>3.7 and geomean(tmp)>0.7:
         isADP=1
 
-    return [isADP,sum(c1),sum(c2)]
+    return [isADP,sum(c1),sum(c2),geomean(tmp)]
 
 def basins(fpdb,bpdb):
 
@@ -244,9 +292,11 @@ def basins(fpdb,bpdb):
     #forward trajectory
     haf=checkATP(forward)
     hbf=checkADP(forward)   
+    print hbf
     #backward trajectory	` 
     hab=checkATP(backward)
     hbb=checkADP(backward)
+    print hbb
 
     
     basin=open("basin_evals.txt","a")
