@@ -1,7 +1,7 @@
 Aimless shooting master script for CP2K
 This example script is for a ATP hydrolysis in F-actin
 
-For quick use type './master.cp2k' on the commmand line and press enter.
+For quick use type 'qsub master.cp2k' on the commmand line and press enter.
 
 This script was adopted from one written by:
 
