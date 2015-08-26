@@ -13,31 +13,9 @@
 #SBATCH --mail-type=ALL
 #SBATCH --time=24:00:00
 
-# Aimless shooting master script for NAMD
-# This example script is for a terephthalic acid crystal in vacuum
-
-# Gregg Beckham, National Renewable Energy Laboratory,
-# Golden, CO 80202
-# gregg_beckham@nrel.gov
-
-# Baron Peters, Department of Chemical Engineering and Chemistry,
-# UC Santa Barbara, Santa Barbara, CA 93106
-# baronp@engineering.ucsb.edu
-
-# February 23, 2008 
-
-# References: Peters and Trout, JCP 2006
-# Beckham, Peters, Variankaval, Starbuck, and Trout, JACS 2007
-# Peters, Beckham, and Trout, JCP 2007
-
-# To run this script, you will need the following:
-# Initial shooting point(s): input/initial_shootpt.coor
-# and input/initial_shootpt.xsc
-
 echo "Start."
 
-# Compile the fortran scripts for basin evaluations and velocity flip
-
+# Load modules and shortcuts
 module unload intel
 module unload intelmpi
 module unload mkl
@@ -90,11 +68,14 @@ halfran=`expr $halfran / 2`
 rm -f shootpt/op*.out
 rm -f acc.txt
 rm -f basin_evals.txt
-rm -f md_rst.inp
+rm -f md_rst.org
+rm -f forw.org
+rm -f back.org
+rm -f dt.org
 
-cp shootpt/blank acc.txt
-cp shootpt/blank h_basin.txt
-cp shootpt/blank basin_evals.txt
+touch acc.txt
+touch h_basin.txt
+touch basin_evals.txt
 
 #cp shootpt/blank shootpt/op1.out
 #cp shootpt/blank shootpt/op2.out
@@ -105,11 +86,9 @@ cp shootpt/blank basin_evals.txt
 #cp shootpt/blank shootpt/op7.out
 #cp shootpt/blank shootpt/op8.out
 
-
 # Start with a seed based on the clock time
 SEED=`date +%H%M%S`
 RANDOM=$SEED
-
 
 #Setting up the shooting point +/-dt crd files
 #This should be edited depending on the shooting point
@@ -188,7 +167,6 @@ do
   mpirun -n $NODES2 $CP2K forw.org > forw.log &
   mpirun -n $NODES2 $CP2K back.org > back.log &
   wait
-#  exit
 
   cp FORWARD.$index-DUMP-1.pdb ./output/crd/$index.shootpt.pdb
   
@@ -238,13 +216,6 @@ do
       fi
     fi
   fi
-
-#  mv shootpt.pdb output/crd/$index.shootpt.pdb
-#  mv temp_output/x+.coor output/crd/$index.x+.pdb
-#  mv temp_output/x-.coor output/crd/$index.x-.pdb
-
-#  mv output/dcd/back.dcd output/dcd/$index.back.dcd
-#  mv output/dcd/forw.dcd output/dcd/$index.forw.dcd
 
   rm FORWARD* BACKWARD* DT* SETUP*
 
