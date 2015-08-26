@@ -419,9 +419,12 @@ def generate(inp,iteration,lsteps,ssteps):
                     dout.write(line)
             elif dumpFlag:
                 if line.find("MD")>=0:
-                    fout.write("         MD  %d\n"%(lsteps))
-                    bout.write("         MD  %d\n"%(lsteps))
-                    dout.write("         MD  %d\n"%(ssteps))
+#                    fout.write("         MD  %d\n"%(lsteps))
+#                    bout.write("         MD  %d\n"%(lsteps))
+#                    dout.write("         MD  %d\n"%(ssteps))
+                    fout.write("         MD  1\n")
+                    bout.write("         MD  1\n")
+                    dout.write("         MD  1\n")
                 else:
                     fout.write(line)
                     bout.write(line)
