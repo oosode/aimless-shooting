@@ -1,4 +1,31 @@
-# aimless-shooting
-Aimless shooting algorithm in CP2K for transition path sampling
+Aimless shooting master script for CP2K
+This example script is for a ATP hydrolysis in F-actin
 
 For quick use type './master.cp2k' on the commmand line and press enter.
+
+This script was adopted from one written by:
+
+Gregg Beckham, National Renewable Energy Laboratory,
+Golden, CO 80202
+gregg_beckham@nrel.gov
+
+Baron Peters, Department of Chemical Engineering and Chemistry,
+UC Santa Barbara, Santa Barbara, CA 93106
+baronp@engineering.ucsb.edu
+
+February 23, 2008 
+
+References: Peters and Trout, JCP 2006
+Beckham, Peters, Variankaval, Starbuck, and Trout, JACS 2007
+Peters, Beckham, and Trout, JCP 2007
+
+In order to run this script, the following files are needed:
+  initial_trajectory/factin_hydrolysis_ts.pdb
+  input/md_rst.org
+  shootpt/blank
+  master.cp2k
+  as.py
+  
+Olaseni Sode, Department of Chemistry, Biochemistry and Physics
+The University of Tampa, Tampa, FL 33602
+osode@ut.edu
