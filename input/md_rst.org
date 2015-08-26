@@ -143,8 +143,8 @@
  &FORCE_EVAL
    METHOD  QMMM
    &DFT
-     BASIS_SET_FILE_NAME ../ref/gth_basis_sets
-     POTENTIAL_FILE_NAME ../ref/gth_potentials
+     BASIS_SET_FILE_NAME ref/gth_basis_sets
+     POTENTIAL_FILE_NAME ref/gth_potentials
      MULTIPLICITY  1
      CHARGE  -4
      &SCF
@@ -182,7 +182,7 @@
          POTENTIAL_TYPE  PAIR_POTENTIAL
          &PAIR_POTENTIAL
            TYPE  DFTD3
-           PARAMETER_FILE_NAME ../ref/dftd3.dat
+           PARAMETER_FILE_NAME ref/dftd3.dat
            REFERENCE_FUNCTIONAL PBE
          &END PAIR_POTENTIAL
        &END VDW_POTENTIAL
@@ -191,7 +191,7 @@
    &MM
      &FORCEFIELD
        PARMTYPE  CHM
-       PARM_FILE_NAME ../ref/par_cmap.inp
+       PARM_FILE_NAME ref/par_cmap.inp
        VDW_SCALE14     1.0000000000000000E+00
        EI_SCALE14     1.0000000000000000E+00
        &SPLINE
@@ -690,7 +690,7 @@
        COORD_FILE_NAME shootpt.pdb
        COORD_FILE_FORMAT  PDB
        NUMBER_OF_ATOMS  55806
-       CONN_FILE_NAME ../GATP-HSD.psf
+       CONN_FILE_NAME ref/GATP-HSD.psf
        CONN_FILE_FORMAT  PSF
        MULTIPLE_UNIT_CELL  1 1 1
        &DUMP_PDB

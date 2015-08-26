@@ -1,0 +1,135 @@
+&GLOBAL
+PROJECT __project__
+SEED __seed__
+PRINT_LEVEL LOW
+PROGRAM CP2K
+RUN_TYPE __run_type__
+&END GLOBAL
+
+&FORCE_EVAL
+METHOD Quickstep
+&DFT
+CHARGE __charge__
+MULTIPLICITY 1
+WFN_RESTART_FILE_NAME __wfn_restart_file_name__
+BASIS_SET_FILE_NAME __basis_set_file_name__
+POTENTIAL_FILE_NAME __potential_file_name__
+&MGRID
+CUTOFF 300
+COMMENSURATE T
+&END MGRID
+&XC
+DENSITY_CUTOFF 1.0E-10
+GRADIENT_CUTOFF 1.0E-10
+TAU_CUTOFF 1.0E-10
+&XC_FUNCTIONAL __xc_functional__
+&END XC_FUNCTIONAL
+&END XC
+&QS
+&END QS
+&SCF
+MAX_SCF __max_scf__
+SCF_GUESS RESTART
+EPS_SCF 0.00005
+&OT ON
+MINIMIZER DIIS
+STEPSIZE 0.1
+PRECONDITIONER FULL_ALL
+&END OT
+&OUTER_SCF T
+EPS_SCF 0.00005
+MAX_SCF __max_scf__
+&END OUTER_SCF
+#&PRINT
+#&RESTART OFF
+#&END
+#&END
+&END SCF
+&END DFT
+&SUBSYS
+&CELL
+ABC __lbox1__ __lbox2__ __lbox3__
+PERIODIC NONE
+&END CELL
+
+&KIND H
+BASIS_SET __basis_set__
+POTENTIAL GTH-__xc_functional__-q1
+&END KIND
+&KIND C
+BASIS_SET __basis_set__
+POTENTIAL GTH-__xc_functional__-q4
+&END KIND
+&KIND N
+BASIS_SET __basis_set__
+POTENTIAL GTH-__xc_functional__-q5
+&END KIND
+&KIND O
+BASIS_SET __basis_set__
+POTENTIAL GTH-__xc_functional__-q6
+&END KIND
+&KIND Si
+BASIS_SET __basis_set__
+POTENTIAL GTH-__xc_functional__-q4
+&END KIND
+&KIND P
+BASIS_SET __basis_set__
+POTENTIAL GTH-__xc_functional__-q5
+&END KIND
+&KIND S
+BASIS_SET __basis_set__
+POTENTIAL GTH-__xc_functional__-q6
+&END KIND
+&KIND Mg
+BASIS_SET __basis_set__
+POTENTIAL GTH-__xc_functional__-q10
+&END KIND
+
+__colvar__
+
+&TOPOLOGY
+COORD_FILE_NAME __coord_file_name__
+COORD_FILE_FORMAT __coord_file_format__
+CONN_FILE_FORMAT OFF
+PARA_RES OFF
+&END TOPOLOGY
+&END SUBSYS
+&END FORCE_EVAL
+
+&MOTION
+&MD
+ENSEMBLE NVT
+STEPS __steps__
+TIMESTEP __timestep__
+TEMPERATURE __temperature__
+COMVEL_TOL 0.001
+ANGVEL_TOL 0.001
+ANGVEL_ZERO
+&THERMOSTAT
+TYPE CSVR
+&CSVR
+TIMECON __timecon__
+&END CSVR
+&END THERMOSTAT
+&END MD
+&PRINT
+&TRAJECTORY
+FILENAME =__project__.xyz
+FORMAT XYZ
+&EACH
+MD __steps__
+&END
+&END TRAJECTORY
+
+&STRUCTURE_DATA
+__structure_data__
+FILENAME =__project__.coll
+&EACH
+MD 1
+&END
+&END STRUCTURE_DATA
+&END
+
+__constraints__
+
+&END MOTION
