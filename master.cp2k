@@ -157,30 +157,38 @@ do
   echo "Run dt..."
   mpirun -n $NODES $CP2K dt.org > dt.log
 
-  mv DT.$index-DUMP-1.pdb ./output/crd/$index.dt.pdb
+  # print last traj and convert to pdb
+  tail -55808 DT.$index-pos-1.xyz > DT.xyz
+  vmd -dispdev text -e dt.vmd
+
+  mv $index.dt.coor       ./output/crd/.
   mv DT.$index-1.restart  ./output/rst/$index.dt.rst
   mv DT.$index-pos-1.xyz  ./output/dcd/$index.dt.xyz
 
-  cp ./output/crd/$index.dt.pdb temp_output/xnew.coor
+  cp ./output/crd/$index.dt.coor temp_output/xnew.coor
 
   echo "Run foward/backward..."
   mpirun -n $NODES2 $CP2K forw.org > forw.log &
   mpirun -n $NODES2 $CP2K back.org > back.log &
   wait
 
-  cp FORWARD.$index-DUMP-1.pdb ./output/crd/$index.shootpt.pdb
-  
+  # print last traj and convert to pdb  
+  tail -55808 FORWARD.$index-pos-1.xyz > FORWARD.xyz
+  tail -55808 BACKWARD.$index-pos-1.xyz > BACKWARD.xyz
+  vmd -dispdev text -e forw.vmd
+  vmd -dispdev text -e back.vmd
+
   #!!!!!!!!!!!!!!!!!!!!!!!
   # Evaluate some basins !
   #!!!!!!!!!!!!!!!!!!!!!!!
   echo "Check basins..."
-  python as.py -c FORWARD.$index-DUMP-1.pdb BACKWARD.$index-DUMP-1.pdb
+  python as.py -c FORWARD.xyz BACKWARD.xyz
 
-  mv FORWARD.$index-DUMP-1.pdb ./output/crd/$index.forw.pdb
+  mv $index.forw.coor          ./output/crd/.
   mv FORWARD.$index-1.restart  ./output/rst/$index.forw.rst
   mv FORWARD.$index-pos-1.xyz  ./output/dcd/$index.forw.xyz
 
-  mv BACKWARD.$index-DUMP-1.pdb ./output/crd/$index.back.pdb
+  mv $index.back.coor           ./output/crd/.
   mv BACKWARD.$index-1.restart  ./output/rst/$index.back.rst
   mv BACKWARD.$index-pos-1.xyz  ./output/dcd/$index.back.xyz
 

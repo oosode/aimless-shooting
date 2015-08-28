@@ -8,112 +8,8 @@ p2 = 5871
 waterstart = 5876
 waterend   = 55750
 
-#inp  = sys.argv[1] # template restart file
-#out  = sys.argv[2] # output restart file
-#dat  = sys.argv[3] # template plumed file
-#plu  = sys.argv[4] # output plumed file
-#cut  = int(sys.argv[5]) # radius (angstrom)
-
-#cut2 = cut*cut
-
-#cell = [92.0,70.0,90.0]
-
-def read_template(inp):
-
-    fin = open(inp).readlines()
-
-    nlines = 0
-    natoms = 0
-    coordinationNumber = 0
-    steps = 0
-
-    coord=[]
-    coordFlag = False
-    coordLine = 1e10
-
-    vel=[]
-    velFlag = False
-    velLine = 1e10
-
-    coordinationLine = []
-    coordinationStopLine = []
-
-    for i,line in enumerate(fin):
-        
-        if line.find("&COORD")>=0 and i > 100:
-            coordFlag = True
-            coordLine = i
-        elif line.find("&END COORD")>=0 and i > 100 and i < 90000:
-            coordFlag = False
-            coordStopLine = i
-
-        elif line.find("&VELOCITY")>=0 and i > 55806:
-            velFlag = True
-            velLine = i
-        elif line.find("&END VELOCITY")>=0 and i > 55806:
-            velFlag = False
-            velStopLine = i
-    #	print i
-     
-        if coordFlag and i > coordLine:
-            natoms+=1
-    #        print line,i
-            atom = line.split()[0]
-            x    = float(line.split()[1])
-            y    = float(line.split()[2])
-            z    = float(line.split()[3])   
-        
-            coord.append([atom,x,y,z])
-
-        if velFlag and i > velLine:
-            
-            x    = float(line.split()[0])
-            y    = float(line.split()[1])
-            z    = float(line.split()[2])	    
-        
-        vel.append([atom,x,y,z]) 
-
-        nlines+=1
-
-    print coord
-    print vel
-    #print inp
-
-    print "Number of lines = %d"%(nlines)
-    print "Number of atoms = %d"%(natoms)
 
 
-
-
-def write_output(inp,out):
-    
-    fout = open(out,"w")
-    fin = open(inp).readlines()
-
-    for i,line in enumerate(fin):
-        
-        if line.find("SEED")>=0:
-            fout.write("SEED   %d\n")
-
-#        elif i == coordLine+1:
-#            for atom in range(0,natoms,1):
-#            fout.write("%s %25.16e %25.16e %25.16e\n"%(coord[atom][0],coord[atom][1],coord[atom][2],coord[atom][3]))
-                   
-#        elif i > coordLine+1 and i < coordStopLine:
-#            pass
-
-#        elif i == velLine+1:
-#        for atom in range(0,natoms,1):
-#            fout.write("  %25.16e %25.16e %25.16e\n"%(vel[atom][0],vel[atom][1],vel[atom][2]))
-
-#        elif i > velLine+1 and i < velStopLine:
-#        pass
-
-        else:
-            fout.write(line)
-
-    fout.close()
-    return
 
 def distance(a,b):
     
@@ -234,7 +130,7 @@ def checkADP(atoms):
     c3=[[]for i in range(4)]
     for i,o in enumerate(Ogamma):
         for h in Hwater:
-	    c3[i].append(CoordinationNumber(h,o,1.2))
+	    c3[i].append(CoordinationNumber(h,o,1.30))
     tmp=[]	    
     for c in c3:
         tmp.append(sum(c))
@@ -242,12 +138,98 @@ def checkADP(atoms):
     tmp=heapq.nlargest(2,tmp)
 
     isADP=0
-    if sum(c1)<0.5 and sum(c2)>3.7 and geomean(tmp)>0.7:
+    if sum(c1)<0.5 and sum(c2)>3.7 and geomean(tmp)>0.9:
         isADP=1
 
     return [isADP,sum(c1),sum(c2),geomean(tmp)]
 
-def basins(fpdb,bpdb):
+def basins_xyz(fpdb,bpdb):
+    
+    """READ IN ATOM COORDINATES"""
+    #forward trajectory
+    forward = []
+    fin = open(fpdb).readlines()
+    gammaP = [float(fin[5872].split()[1]),float(fin[5872].split()[2]),float(fin[5872].split()[3])]
+    
+    for i,line in enumerate(fin):
+        if i<2:
+            pass
+        else:
+            atom=[float(line.split()[1]),float(line.split()[2]),float(line.split()[3])]
+            if distance(gammaP,atom) < 8:
+                forward.append([i-1,line.split()[0],
+                                float(line.split()[1]),
+                                float(line.split()[2]),
+                                float(line.split()[3])])
+    #backward trajectory
+    backward = []
+    fin = open(bpdb).readlines()
+    gammaP = [float(fin[5872].split()[1]),float(fin[5872].split()[2]),float(fin[5872].split()[3])]
+    
+    for i,line in enumerate(fin):
+        if i<2:
+            pass
+        else:
+            atom=[float(line.split()[1]),float(line.split()[2]),float(line.split()[3])]
+            if distance(gammaP,atom) < 8:
+                backward.append([i-1,line.split()[0],
+                                 float(line.split()[1]),
+                                 float(line.split()[2]),
+                                 float(line.split()[3])])
+
+
+    """CHECK BASINS"""
+    
+    haf=0
+    hbf=0
+    hab=0
+    hbb=0
+    
+    #forward trajectory
+    haf=checkATP(forward)
+    hbf=checkADP(forward)
+
+    #backward trajectory
+    hab=checkATP(backward)
+    hbb=checkADP(backward)
+
+    
+    
+    basin=open("basin_evals.txt","a")
+    # This test is different than in the master h.f script from reference.
+    # I'm thinking it is a typo there, but that this should be correct.
+    conclusive = (haf[0] + hbf[0]) * (hab[0] + hbb[0])
+    
+    if conclusive == 0:
+        basin.write("Inconclusive %d %d %d %d\n"%(haf[0],hbf[0],hab[0],hbb[0]))
+    elif conclusive == 2:
+        basin.write("Overlapping %d %d %d %d\n"%(haf[0],hbf[0],hab[0],hbb[0]))
+    elif conclusive == 1:
+        basin.write("Conclusive %d %d %d %d\n"%(haf[0],hbf[0],hab[0],hbb[0]))
+    else:
+        print "That's wierd. Exiting..."
+        exit(0)
+
+    basin.close()
+    
+    af=open("haf","w")
+    ab=open("hab","w")
+    bf=open("hbf","w")
+    bb=open("hbb","w")
+    
+    af.write("%d"%(haf[0]))
+    ab.write("%d"%(hab[0]))
+    bf.write("%d"%(hbf[0]))
+    bb.write("%d"%(hbb[0]))
+    
+    af.close()
+    ab.close()
+    bf.close()
+    bb.close()
+    
+    return
+
+def basins_pdb(fpdb,bpdb):
 
     """READ IN ATOM COORDINATES"""
     #forward trajectory
@@ -292,11 +274,11 @@ def basins(fpdb,bpdb):
     #forward trajectory
     haf=checkATP(forward)
     hbf=checkADP(forward)   
-    print hbf
+
     #backward trajectory	` 
     hab=checkATP(backward)
     hbb=checkADP(backward)
-    print hbb
+
 
     
     basin=open("basin_evals.txt","a")
@@ -434,6 +416,34 @@ def generate(inp,iteration,lsteps,ssteps):
                 bout.write(line)
                 dout.write(line)
 
+    fout.close()
+    bout.close()
+    dout.close()
+
+    fout=open("forw.vmd","w")
+    bout=open("back.vmd","w")
+    dout=open("dt.vmd","w")
+
+    fin=open("input/xyz2pdb.vmd").readlines() 
+
+    for i,line in enumerate(fin):
+        if line.find("addfile")>=0:
+	    fout.write("mol addfile FORWARD.xyz type xyz first -1 last -1 step 1 filebonds 1 autobonds 1 waitfor all\n")
+	    bout.write("mol addfile BACKWARD.xyz type xyz first -1 last -1 step 1 filebonds 1 autobonds 1 waitfor all\n")
+	    dout.write("mol addfile DT.xyz type xyz first -1 last -1 step 1 filebonds 1 autobonds 1 waitfor all\n")
+	elif line.find("writepdb")>=0:
+	    fout.write("$sel writepdb %d.forw.coor\n"%(iteration))
+	    bout.write("$sel writepdb %d.back.coor\n"%(iteration))
+	    dout.write("$sel writepdb %d.dt.coor\n"%(iteration))
+	else:
+	    fout.write(line)
+	    bout.write(line)
+	    dout.write(line)
+
+    fout.close()
+    bout.close()
+    dout.close()
+
     return
 
 def reseed(inp,out,seed,coord=False):
@@ -507,7 +517,8 @@ if __name__=="__main__":
 	    seed=int(sys.argv[i+1])
 
     if cmd=="count":
-        basins(forw,back)
+	basins_xyz(forw,back)
+#        basins_pdb(forw,back)
 
     elif cmd=="generate":
 	generate(finput,iteration,lsteps,ssteps)

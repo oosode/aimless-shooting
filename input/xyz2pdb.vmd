@@ -1,0 +1,8 @@
+mol new ref/GATP-HSD.psf type psf filebonds 1 autobonds 1 waitfor all
+mol addfile tmp.xyz type xyz first -1 last -1 step 1 filebonds 1 autobonds 1 waitfor all
+
+set sel [atomselect top "all"]
+set n [molinfo top get numframes]
+$sel writepdb end.pdb
+
+exit
