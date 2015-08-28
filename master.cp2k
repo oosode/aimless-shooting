@@ -225,7 +225,8 @@ do
     fi
   fi
 
-  rm FORWARD* BACKWARD* DT* SETUP*
+#  rm FORWARD* BACKWARD* DT* SETUP*
+  rm FORWARD* BACKWARD* DT*
 
   echo "index (reported at the end!) " $index
   echo " "

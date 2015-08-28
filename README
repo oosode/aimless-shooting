@@ -22,6 +22,7 @@ Peters, Beckham, and Trout, JCP 2007
 In order to run this script, the following files are needed:
   initial_trajectory/factin_hydrolysis_ts.pdb
   input/md_rst.org
+  input/xyz2pdb.vmd
   shootpt/blank
   master.cp2k
   as.py
