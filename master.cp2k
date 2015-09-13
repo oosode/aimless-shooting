@@ -1,8 +1,8 @@
 #!/bin/sh
 ##!/bin/bash
 
-#SBATCH --nodes=10
-#SBATCH --ntasks=200
+#SBATCH --nodes=20
+#SBATCH --ntasks=400
 #SBATCH --partition=gavoth
 #SBATCH --reservation=gavoth4
 #SBATCH --cpus-per-task=1
@@ -11,7 +11,7 @@
 #SBATCH --constraint=ib
 #SBATCH --job-name=TPS
 #SBATCH --mail-type=ALL
-#SBATCH --time=24:00:00
+#SBATCH --time=03:00:00
 
 echo "Start."
 
@@ -29,14 +29,14 @@ CP2K=/home/oosode/software/cp2k/cp2k/exe/Linux-x86-64-sangyun/cp2k.popt
 source /home/oosode/software/plumed2-ttmetad/sourceme.sh
 
 # Number of total nodes (should be divisible by two)
-NODES=200
+NODES=400
 NODES2=`expr $NODES / 2`
 
 
 #!!!!!!!!!!!
 #Variables!#
 #!!!!!!!!!!!
-index=1
+index=2
 numpaths=500
 ranscale=32767
 halfran=`expr $ranscale - 1`
@@ -146,8 +146,8 @@ do
   mpirun -n $NODES $CP2K md_rst.org > md_rst.log
 
   echo "Generate shooting restarts..."
-  large_steps=100
-  small_steps=5
+  large_steps=1000
+  small_steps=20
 
   python as.py -g $index $large_steps $small_steps -i SETUP-1.restart
 
@@ -161,6 +161,7 @@ do
   tail -55808 DT.$index-pos-1.xyz > DT.xyz
   vmd -dispdev text -e dt.vmd
 
+  mv DT.xyz               ./output/crd/$index.dt.xyz
   mv $index.dt.coor       ./output/crd/.
   mv DT.$index-1.restart  ./output/rst/$index.dt.rst
   mv DT.$index-pos-1.xyz  ./output/dcd/$index.dt.xyz
@@ -184,10 +185,12 @@ do
   echo "Check basins..."
   python as.py -c FORWARD.xyz BACKWARD.xyz
 
+  mv FORWARD.xyz               ./output/crd/$index.forw.xyz
   mv $index.forw.coor          ./output/crd/.
   mv FORWARD.$index-1.restart  ./output/rst/$index.forw.rst
   mv FORWARD.$index-pos-1.xyz  ./output/dcd/$index.forw.xyz
 
+  mv BACKWARD.xyz		./output/crd/$index.back.xyz
   mv $index.back.coor           ./output/crd/.
   mv BACKWARD.$index-1.restart  ./output/rst/$index.back.rst
   mv BACKWARD.$index-pos-1.xyz  ./output/dcd/$index.back.xyz

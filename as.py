@@ -232,7 +232,6 @@ def checkADP(atoms):
                        [i for i in atoms if i[0] == n][0][3], \
                        [i for i in atoms if i[0] == n][0][4]])
              
-
     # determine parameters 
 
     # coordination number between gamma phosphorous
@@ -252,7 +251,8 @@ def checkADP(atoms):
     c3=[[]for i in range(4)]
     for i,o in enumerate(Ogamma):
         for h in Hwater:
-	    c3[i].append(CoordinationNumber(h,o,1.30))
+	    c3[i].append(CoordinationNumber(h,o,1.50))
+
     tmp=[]	    
     for c in c3:
         tmp.append(sum(c))
@@ -260,10 +260,11 @@ def checkADP(atoms):
     tmp=heapq.nlargest(2,tmp)
 
     isADP=0
-    if sum(c1)<0.5 and sum(c2)>3.7 and geomean(tmp)>0.9:
+    if sum(c1)<0.5 and sum(c2)>3.7: # and geomean(tmp)>0.75:
         isADP=1
 
-    return [isADP,sum(c1),sum(c2),geomean(tmp)]
+#    return [isADP,sum(c1),sum(c2),geomean(tmp)]
+    return [isADP,sum(c1),sum(c2)]
 
 def basins_xyz(fpdb,bpdb):
     
