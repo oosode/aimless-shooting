@@ -133,7 +133,7 @@ def checkADP(atoms):
     tmp=[]	    
     for c in c3:
         tmp.append(sum(c))
-    print tmp
+    #print tmp
     tmp=heapq.nlargest(2,tmp)
 
     isADP=0
@@ -186,6 +186,7 @@ def basins_xyz(fpdb,bpdb):
     
     #forward trajectory
     haf=checkATP(forward)
+    print haf
     hbf=checkADP(forward)
 
     #backward trajectory
@@ -226,92 +227,6 @@ def basins_xyz(fpdb,bpdb):
     bf.close()
     bb.close()
     
-    return
-
-def basins_pdb(fpdb,bpdb):
-
-    """READ IN ATOM COORDINATES"""
-    #forward trajectory
-    forward = []
-    fin = open(fpdb).readlines()
-    gammaP = [float(fin[5874].split()[5]),float(fin[5874].split()[6]),float(fin[5874].split()[7])]
-
-    for i,line in enumerate(fin):
-        if i<4 or i==len(fin)-1:
-            pass
-	else:
-  	    atom=[float(line.split()[5]),float(line.split()[6]),float(line.split()[7])]
-            if distance(gammaP,atom) < 8:
-		forward.append([int(line.split()[1]),line.split()[-1],
-			        float(line.split()[5]),
-			        float(line.split()[6]),
-			        float(line.split()[7])])
-    #backward trajectory
-    backward = []
-    fin = open(bpdb).readlines()
-    gammaP = [float(fin[5874].split()[5]),float(fin[5874].split()[6]),float(fin[5874].split()[7])]
-    
-    for i,line in enumerate(fin):
-        if i<4 or i==len(fin)-1:
-            pass
-        else:
-            atom=[float(line.split()[5]),float(line.split()[6]),float(line.split()[7])]
-            if distance(gammaP,atom) < 8:
-                backward.append([int(line.split()[1]),line.split()[-1],
-                                float(line.split()[5]),
-                                float(line.split()[6]),
-                                float(line.split()[7])])
-
-
-    """CHECK BASINS"""
-
-    haf=0 
-    hbf=0
-    hab=0
-    hbb=0
-
-    #forward trajectory
-    haf=checkATP(forward)
-    hbf=checkADP(forward)   
-
-    #backward trajectory	` 
-    hab=checkATP(backward)
-    hbb=checkADP(backward)
-
-
-    
-    basin=open("basin_evals.txt","a")
-    # This test is different than in the master h.f script from reference.
-    # I'm thinking it is a typo there, but that this should be correct.
-    conclusive = (haf[0] + hbf[0]) * (hab[0] + hbb[0])
-    
-    if conclusive == 0:
-        basin.write("Inconclusive %d %d %d %d\n"%(haf[0],hbf[0],hab[0],hbb[0]))
-    elif conclusive == 2:
-	basin.write("Overlapping %d %d %d %d\n"%(haf[0],hbf[0],hab[0],hbb[0]))
-    elif conclusive == 1:
-	basin.write("Conclusive %d %d %d %d\n"%(haf[0],hbf[0],hab[0],hbb[0]))
-    else:
-        print "That's wierd. Exiting..."
-	exit(0)
-
-    basin.close()
-    
-    af=open("haf","w")
-    ab=open("hab","w")
-    bf=open("hbf","w")
-    bb=open("hbb","w")
-
-    af.write("%d"%(haf[0]))
-    ab.write("%d"%(hab[0]))
-    bf.write("%d"%(hbf[0]))
-    bb.write("%d"%(hbb[0]))
-
-    af.close()
-    ab.close()
-    bf.close()
-    bb.close()
-
     return
 
 def generate(inp,iteration,lsteps,ssteps):
@@ -517,7 +432,6 @@ if __name__=="__main__":
 
     if cmd=="count":
 	basins_xyz(forw,back)
-#        basins_pdb(forw,back)
 
     elif cmd=="generate":
 	generate(finput,iteration,lsteps,ssteps)
