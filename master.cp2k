@@ -104,9 +104,6 @@ do
   
   rm -f md_rst.org
 
-  echo "Seed velocities..."
-  python as.py -i "input/md_rst.org" -o "md_rst.org" -s $RANDOM -p shootpt.pdb 
-
   if test $RANDOM -le $halfran
   then
     cp x1.pdb shootpt.pdb
@@ -115,6 +112,9 @@ do
     cp x2.pdb shootpt.pdb
     echo $index "using x2.pdb"
   fi
+
+  echo "Seed velocities..."
+  python as.py -i "input/md_rst.org" -o "md_rst.org" -s $RANDOM -p shootpt.pdb
 
   #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   # Determine the order parameters at shootpt.crd with ! 

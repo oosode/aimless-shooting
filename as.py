@@ -9,6 +9,128 @@ waterstart = 5876
 waterend   = 55750
 
 
+def read_input(org,pdb,out):
+
+  p1 = 5871
+  p2 = 5871
+  waterstart = 5876
+  waterend   = 55750
+
+  cut2 = cut*cut
+
+  cell = [92.0,70.0,90.0]
+
+  nlines = 0
+  natoms = 0
+  coordinationNumber = 0
+  steps = 0
+
+  coord=[]
+  coordFlag = False
+  coordLine = 1e10
+
+  coordinationLine = []
+  coordinationStopLine = []
+
+  forg = open(org).readlines()
+  
+  for i,line in enumerate(forg):
+    
+    if line.find("&QM_KIND Oqm")>=0:
+        oqmStartLine = i
+    elif line.find("&QM_KIND Nqm")>=0:
+        oqmStopLine = i-1
+    elif line.find("&QM_KIND Hqm")>=0:
+	hqmStartLine = i
+    elif line.find("&QM_KIND Pqm")>=0:
+	hqmStopLine = i-1
+ 
+    nlines+=1
+
+   
+  fpdb = open(pdb).readlines()
+ 
+  for i,line in enumerate(fpdb):
+  
+    if i>0 and i<len(fpdb)-1:
+
+        natoms+=1
+
+        atom = line[11:17]
+	x    = float(line[31:38])
+	y    = float(line[39:46])
+	z    = float(line[47:54])
+	
+	coord.append([atom,x,y,z])
+
+
+  for atom in range(waterstart-1,waterend-1,3):
+
+    dist1 = 0.0
+    dist2 = 0.0
+
+    for k in range(0,3,1):
+	tempdist = coord[p1-1][k+1]-coord[atom][k+1]
+        if tempdist < -cell[k]/2.0:
+	    tempdist += cell[k]
+        elif tempdist > cell[k]/2.0:
+            tempdist -= cell[k]
+
+        dist1 += tempdist*tempdist
+
+        tempdist = coord[p2-1][k+1]-coord[atom][k+1]
+        if tempdist < -cell[k]/2.0:
+            tempdist += cell[k]
+        elif tempdist > cell[k]/2.0:
+            tempdist -= cell[k]
+
+        dist2 += tempdist*tempdist
+
+    if dist1 < cut2 or dist2 < cut2:
+        #make sure water is in box
+        for k in range(0,3,1):
+            if coord[atom][k+1] < -cell[k]/2.0:
+		coord[atom+0][k+1] += cell[k]
+		coord[atom+1][k+1] += cell[k]
+                coord[atom+2][k+1] += cell[k]      
+	    elif coord[atom][k+1] > cell[k]/2.0:
+                coord[atom+0][k+1] -= cell[k]
+                coord[atom+1][k+1] -= cell[k]
+                coord[atom+2][k+1] -= cell[k]
+
+    
+        closeWat.append(atom+1)
+        #print "%d"%(atom),
+        nCloseWats+=1      
+  
+  fout = open(out,"w")
+  
+  for i,line in enumerate(forg):
+    
+    if i == oqmStartLine+3:
+        fout.write("       MM_INDEX")
+        for j in range(0,nCloseWats,1):
+            fout.write(" %d"%(closeWat[j]))
+	    if (j+1)%9==0 and (j+1)!=nCloseWats:
+	        fout.write(" \\\n       ")
+        fout.write("\n")
+    elif i > oqmStartLine+3 and i < oqmStopLine:
+        pass
+    elif i == hqmStartLine+4:
+        fout.write("       MM_INDEX")
+	for j in range(0,nCloseWats,1):
+	    fout.write(" %d %d"%(closeWat[j]+1,closeWat[j]+2))
+	    if (j+1)%5==0 and (j+1)!=nCloseWats:
+	        fout.write(" \\\n       ")
+        
+        fout.write("\n")
+    elif i > hqmStartLine+4 and i < hqmStopLine:
+        pass
+
+    else:
+        fout.write(line)
+
+  fout.close()
 
 
 def distance(a,b):
@@ -363,7 +485,9 @@ def generate(inp,iteration,lsteps,ssteps):
 
 def reseed(inp,out,seed,coord=False):
 
-    fin  = open(inp).readlines()
+    read_input(inp,coord,out)
+
+    fin  = open(out).readlines()
     fout = open(out,"w")
 
     for i,line in enumerate(fin):
