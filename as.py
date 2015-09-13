@@ -130,6 +130,7 @@ def checkADP(atoms):
     for i,o in enumerate(Ogamma):
         for h in Hwater:
 	    c3[i].append(CoordinationNumber(h,o,1.50))
+
     tmp=[]	    
     for c in c3:
         tmp.append(sum(c))
@@ -137,10 +138,11 @@ def checkADP(atoms):
     tmp=heapq.nlargest(2,tmp)
 
     isADP=0
-    if sum(c1)<0.5 and sum(c2)>3.7 and geomean(tmp)>0.75:
+    if sum(c1)<0.5 and sum(c2)>3.7: # and geomean(tmp)>0.75:
         isADP=1
 
-    return [isADP,sum(c1),sum(c2),geomean(tmp)]
+#    return [isADP,sum(c1),sum(c2),geomean(tmp)]
+    return [isADP,sum(c1),sum(c2)]
 
 def basins_xyz(fpdb,bpdb):
     
