@@ -1,8 +1,8 @@
 #!/bin/sh
 ##!/bin/bash
 
-#SBATCH --nodes=20
-#SBATCH --ntasks=400
+#SBATCH --nodes=1
+#SBATCH --ntasks=20
 #SBATCH --partition=gavoth
 #SBATCH --reservation=gavoth4
 #SBATCH --cpus-per-task=1
@@ -29,15 +29,15 @@ CP2K=/home/oosode/software/cp2k/cp2k/exe/Linux-x86-64-sangyun/cp2k.popt
 source /home/oosode/software/plumed2-ttmetad/sourceme.sh
 
 # Number of total nodes (should be divisible by two)
-NODES=400
+NODES=20
 NODES2=`expr $NODES / 2`
 
 
 #!!!!!!!!!!!
 #Variables!#
 #!!!!!!!!!!!
-index=2
-numpaths=500
+index=1
+numpaths=10
 ranscale=32767
 halfran=`expr $ranscale - 1`
 halfran=`expr $halfran / 2`
@@ -95,8 +95,8 @@ RANDOM=$SEED
 # NB: if you are running NPT dynamics, you will need to include 
 # xsc files with the pdbs to keep track of the lattice parameters.
 
-cp initial_trajectory/factin_hydrolysis_ts.pdb x1.pdb
-cp initial_trajectory/factin_hydrolysis_ts.pdb x2.pdb
+cp initial_trajectory/factin_hydrolysis_ts_0.pdb x1.pdb
+cp initial_trajectory/factin_hydrolysis_ts_0.pdb x2.pdb
 
 #Start loop over variable index
 while [ $index -le $numpaths ]
@@ -146,7 +146,7 @@ do
   mpirun -n $NODES $CP2K md_rst.org > md_rst.log
 
   echo "Generate shooting restarts..."
-  large_steps=1000
+  large_steps=100
   small_steps=20
 
   python as.py -g $index $large_steps $small_steps -i SETUP-1.restart
