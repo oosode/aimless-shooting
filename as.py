@@ -16,6 +16,7 @@ def read_input(org,pdb,out):
   waterstart = 5876
   waterend   = 55750
 
+  cut  = 8
   cut2 = cut*cut
 
   cell = [92.0,70.0,90.0]
@@ -63,6 +64,8 @@ def read_input(org,pdb,out):
 	
 	coord.append([atom,x,y,z])
 
+  nCloseWats = 0
+  closeWat = []
 
   for atom in range(waterstart-1,waterend-1,3):
 
@@ -310,14 +313,16 @@ def basins_xyz(fpdb,bpdb):
     
     #forward trajectory
     haf=checkATP(forward)
-    print haf
     hbf=checkADP(forward)
 
     #backward trajectory
     hab=checkATP(backward)
     hbb=checkADP(backward)
 
-    
+    print "HAF", haf
+    print "HBF", hbf
+    print "HAB", hab
+    print "HBB", hbb
     
     basin=open("basin_evals.txt","a")
     # This test is different than in the master h.f script from reference.

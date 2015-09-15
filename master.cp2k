@@ -11,7 +11,7 @@
 #SBATCH --constraint=ib
 #SBATCH --job-name=TPS
 #SBATCH --mail-type=ALL
-#SBATCH --time=03:00:00
+#SBATCH --time=24:00:00
 
 echo "Start."
 
@@ -36,7 +36,7 @@ NODES2=`expr $NODES / 2`
 #!!!!!!!!!!!
 #Variables!#
 #!!!!!!!!!!!
-index=1
+index=2
 numpaths=10
 ranscale=32767
 halfran=`expr $ranscale - 1`
@@ -95,8 +95,8 @@ RANDOM=$SEED
 # NB: if you are running NPT dynamics, you will need to include 
 # xsc files with the pdbs to keep track of the lattice parameters.
 
-cp initial_trajectory/factin_hydrolysis_ts_0.pdb x1.pdb
-cp initial_trajectory/factin_hydrolysis_ts_0.pdb x2.pdb
+cp initial_trajectory/factin_hydrolysis_ts_1.pdb x1.pdb
+cp initial_trajectory/factin_hydrolysis_ts_1.pdb x2.pdb
 
 #Start loop over variable index
 while [ $index -le $numpaths ]
