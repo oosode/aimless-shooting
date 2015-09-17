@@ -36,8 +36,8 @@ NODES2=`expr $NODES / 2`
 #!!!!!!!!!!!
 #Variables!#
 #!!!!!!!!!!!
-index=2
-numpaths=10
+index=22
+numpaths=40
 ranscale=32767
 halfran=`expr $ranscale - 1`
 halfran=`expr $halfran / 2`
@@ -95,8 +95,8 @@ RANDOM=$SEED
 # NB: if you are running NPT dynamics, you will need to include 
 # xsc files with the pdbs to keep track of the lattice parameters.
 
-cp initial_trajectory/factin_hydrolysis_ts_1.pdb x1.pdb
-cp initial_trajectory/factin_hydrolysis_ts_1.pdb x2.pdb
+cp initial_trajectory/factin_hydrolysis_ts_3.pdb x1.pdb
+cp initial_trajectory/factin_hydrolysis_ts_3.pdb x2.pdb
 
 #Start loop over variable index
 while [ $index -le $numpaths ]

@@ -27,3 +27,6 @@ dt*
 md_rst*
 forw*
 back*
+
+
+!initial_trajectory/*.pdb
