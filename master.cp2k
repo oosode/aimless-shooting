@@ -1,8 +1,8 @@
 #!/bin/sh
 ##!/bin/bash
 
-#SBATCH --nodes=1
-#SBATCH --ntasks=20
+#SBATCH --nodes=6
+#SBATCH --ntasks=120
 #SBATCH --partition=gavoth
 #SBATCH --reservation=gavoth4
 #SBATCH --cpus-per-task=1
@@ -29,15 +29,14 @@ CP2K=/home/oosode/software/cp2k/cp2k/exe/Linux-x86-64-sangyun/cp2k.popt
 source /home/oosode/software/plumed2-ttmetad/sourceme.sh
 
 # Number of total nodes (should be divisible by two)
-NODES=20
+NODES=120
 NODES2=`expr $NODES / 2`
-
 
 #!!!!!!!!!!!
 #Variables!#
 #!!!!!!!!!!!
-index=22
-numpaths=40
+index=50
+numpaths=100
 ranscale=32767
 halfran=`expr $ranscale - 1`
 halfran=`expr $halfran / 2`
@@ -47,7 +46,6 @@ halfran=`expr $halfran / 2`
 # ranscale = maximum random integer generated on a 32-bit machine, for
 # selecting the x- or x+ shooting point.
 # halfran = half of the maximum random integer 
-
 
 # Setting up the nodelist for mpi run 
 # nproc = number of processors to run on 
@@ -66,8 +64,8 @@ halfran=`expr $halfran / 2`
 # Cleaning the directory of old data
 # Make sure not to overwrite information from a previous run! 
 rm -f shootpt/op*.out
-rm -f acc.txt
-rm -f basin_evals.txt
+#rm -f acc.txt
+#rm -f basin_evals.txt
 rm -f md_rst.org
 rm -f forw.org
 rm -f back.org
@@ -95,14 +93,30 @@ RANDOM=$SEED
 # NB: if you are running NPT dynamics, you will need to include 
 # xsc files with the pdbs to keep track of the lattice parameters.
 
-cp initial_trajectory/factin_hydrolysis_ts_3.pdb x1.pdb
-cp initial_trajectory/factin_hydrolysis_ts_3.pdb x2.pdb
+#cp initial_trajectory/factin_hydrolysis_ts_5.pdb x1.pdb
+#cp initial_trajectory/factin_hydrolysis_ts_5.pdb x2.pdb
 
 #Start loop over variable index
 while [ $index -le $numpaths ]
 do
+
+  if $index -le 1 
+  then 
+    rm -r acc.txt
+    rm -r basin_evals.txt
+    rm -r h_basin.txt
+    cp initial_trajectory/factin_hydrolysis_ts_5.pdb x1.pdb
+    cp initial_trajectory/factin_hydrolysis_ts_5.pdb x2.pdb
+  fi
+
+
+  rm -f shootpt/op*.out
+  rm -f md_rst.*
+  rm -f forw.*
+  rm -f back.*
+  rm -f dt.*
   
-  rm -f md_rst.org
+  rm FORWARD* BACKWARD* DT*  
 
   if test $RANDOM -le $halfran
   then
@@ -146,8 +160,8 @@ do
   mpirun -n $NODES $CP2K md_rst.org > md_rst.log
 
   echo "Generate shooting restarts..."
-  large_steps=100
-  small_steps=20
+  large_steps=250
+  small_steps=5
 
   python as.py -g $index $large_steps $small_steps -i SETUP-1.restart
 
@@ -199,6 +213,7 @@ do
   hbf=`cat hbf`
   hab=`cat hab`
   hbb=`cat hbb`
+
   echo "haf, hbf, hab, hbb " $haf $hbf $hab $hbb
   echo "haf, hbf, hab, hbb " $hab $hbb $haf $hbf  >> h_basin.txt
   rm -f haf hbf hab hbb

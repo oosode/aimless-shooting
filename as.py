@@ -53,7 +53,7 @@ def read_input(org,pdb,out):
  
   for i,line in enumerate(fpdb):
   
-    if i>0 and i<len(fpdb)-1:
+    if i>0 and line.find("ATOM")>=0 and i<len(fpdb)-1:
 
         natoms+=1
 
