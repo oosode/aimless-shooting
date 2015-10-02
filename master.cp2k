@@ -1,8 +1,8 @@
 #!/bin/sh
 ##!/bin/bash
 
-#SBATCH --nodes=6
-#SBATCH --ntasks=120
+#SBATCH --nodes=8
+#SBATCH --ntasks=160
 #SBATCH --partition=gavoth
 #SBATCH --reservation=gavoth4
 #SBATCH --cpus-per-task=1
@@ -29,14 +29,14 @@ CP2K=/home/oosode/software/cp2k/cp2k/exe/Linux-x86-64-sangyun/cp2k.popt
 source /home/oosode/software/plumed2-ttmetad/sourceme.sh
 
 # Number of total nodes (should be divisible by two)
-NODES=120
+NODES=160
 NODES2=`expr $NODES / 2`
 
 #!!!!!!!!!!!
 #Variables!#
 #!!!!!!!!!!!
-index=50
-numpaths=100
+index=100
+numpaths=101
 ranscale=32767
 halfran=`expr $ranscale - 1`
 halfran=`expr $halfran / 2`
@@ -64,8 +64,6 @@ halfran=`expr $halfran / 2`
 # Cleaning the directory of old data
 # Make sure not to overwrite information from a previous run! 
 rm -f shootpt/op*.out
-#rm -f acc.txt
-#rm -f basin_evals.txt
 rm -f md_rst.org
 rm -f forw.org
 rm -f back.org
@@ -93,22 +91,31 @@ RANDOM=$SEED
 # NB: if you are running NPT dynamics, you will need to include 
 # xsc files with the pdbs to keep track of the lattice parameters.
 
-#cp initial_trajectory/factin_hydrolysis_ts_5.pdb x1.pdb
-#cp initial_trajectory/factin_hydrolysis_ts_5.pdb x2.pdb
+#ACTIN
+#actin=0 #F-actin flag
+actin=1 #G-actin flag
 
 #Start loop over variable index
 while [ $index -le $numpaths ]
 do
 
-  if $index -le 1 
+  if test $index -le 1 
   then 
-    rm -r acc.txt
-    rm -r basin_evals.txt
-    rm -r h_basin.txt
-    cp initial_trajectory/factin_hydrolysis_ts_5.pdb x1.pdb
-    cp initial_trajectory/factin_hydrolysis_ts_5.pdb x2.pdb
+    if test $actin -eq 0
+    then
+      rm -r acc.txt
+      rm -r basin_evals.txt
+      rm -r h_basin.txt
+      cp initial_trajectory/factin_hydrolysis_ts_5.pdb x1.pdb
+      cp initial_trajectory/factin_hydrolysis_ts_5.pdb x2.pdb
+    else 
+      rm -r acc.txt
+      rm -r basin_evals.txt
+      rm -r h_basin.txt
+      cp initial_trajectory/gactin_hydrolysis_ts_0.pdb x1.pdb
+      cp initial_trajectory/gactin_hydrolysis_ts_0.pdb x2.pdb
+    fi
   fi
-
 
   rm -f shootpt/op*.out
   rm -f md_rst.*
@@ -128,8 +135,13 @@ do
   fi
 
   echo "Seed velocities..."
-  python as.py -i "input/md_rst.org" -o "md_rst.org" -s $RANDOM -p shootpt.pdb
-
+  if test $actin -eq 0 
+  then
+    python as.py -i "input/md_factin_rst.org" -o "md_rst.org" -s $RANDOM -p shootpt.pdb -a 0
+  else
+    python as.py -i "input/md_gactin_rst.org" -o "md_rst.org" -s $RANDOM -p shootpt.pdb -a 1
+  fi
+ 
   #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   # Determine the order parameters at shootpt.crd with ! 
   # an external script op_shoot.f                      ! 
@@ -244,11 +256,12 @@ do
   fi
 
 #  rm FORWARD* BACKWARD* DT* SETUP*
-  rm FORWARD* BACKWARD* DT*
+#  rm FORWARD* BACKWARD* DT*
 
   echo "index (reported at the end!) " $index
   echo " "
   index=`expr $index + 1`
   echo $index
+
 done
 

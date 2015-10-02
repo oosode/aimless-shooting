@@ -9,7 +9,7 @@ waterstart = 5876
 waterend   = 55750
 
 
-def read_input(org,pdb,out):
+def read_input(org,pdb,out,conf):
 
   p1 = 5871
   p2 = 5871
@@ -109,6 +109,13 @@ def read_input(org,pdb,out):
   fout = open(out,"w")
   
   for i,line in enumerate(forg):
+
+    if conf==0:
+        addlines=4
+    elif conf==1:
+        addlines=5
+    else:
+        print "invalid conf input."
     
     if i == oqmStartLine+3:
         fout.write("       MM_INDEX")
@@ -119,7 +126,7 @@ def read_input(org,pdb,out):
         fout.write("\n")
     elif i > oqmStartLine+3 and i < oqmStopLine:
         pass
-    elif i == hqmStartLine+4:
+    elif i == hqmStartLine+addlines:
         fout.write("       MM_INDEX")
 	for j in range(0,nCloseWats,1):
 	    fout.write(" %d %d"%(closeWat[j]+1,closeWat[j]+2))
@@ -127,7 +134,7 @@ def read_input(org,pdb,out):
 	        fout.write(" \\\n       ")
         
         fout.write("\n")
-    elif i > hqmStartLine+4 and i < hqmStopLine:
+    elif i > hqmStartLine+addlines and i < hqmStopLine:
         pass
 
     else:
@@ -489,9 +496,12 @@ def generate(inp,iteration,lsteps,ssteps):
 
     return
 
-def reseed(inp,out,seed,coord=False):
+def reseed(inp,out,seed,coord,actin):
 
-    read_input(inp,coord,out)
+    #actin = 0 is factin
+    #actin = 1 is gactin
+
+    read_input(inp,coord,out,actin)
 
     fin  = open(out).readlines()
     fout = open(out,"w")
@@ -530,6 +540,7 @@ if __name__=="__main__":
 	print("-c -- Count the convergence into the wells.")
 	print("-g -- Generate aimless shooting throws (forw,back,dt).") # include iteration number
         print("-s -- Seed simulation.") # include seed number 
+        print("-a -- F-actin or G-actin (0 or 1 respectively).")
 
         print("-i -- Input file.")
 	print("-o -- Output file.")
@@ -560,6 +571,8 @@ if __name__=="__main__":
 	elif val=="-s":
 	    cmd="seed"
 	    seed=int(sys.argv[i+1])
+        elif val=="-a":
+            actin=int(sys.argv[i+1])
 
     if cmd=="count":
 	basins_xyz(forw,back)
@@ -568,4 +581,4 @@ if __name__=="__main__":
 	generate(finput,iteration,lsteps,ssteps)
 
     elif cmd=="seed":
-	reseed(finput,foutput,seed,coord)
+	reseed(finput,foutput,seed,coord,actin)
