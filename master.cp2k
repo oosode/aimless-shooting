@@ -35,7 +35,7 @@ NODES2=`expr $NODES / 2`
 #!!!!!!!!!!!
 #Variables!#
 #!!!!!!!!!!!
-index=100
+index=1
 numpaths=101
 ranscale=32767
 halfran=`expr $ranscale - 1`
