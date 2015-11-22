@@ -1,8 +1,8 @@
 #!/bin/sh
 ##!/bin/bash
 
-#SBATCH --nodes=8
-#SBATCH --ntasks=160
+#SBATCH --nodes=2
+#SBATCH --ntasks=40
 #SBATCH --partition=gavoth
 #SBATCH --reservation=gavoth4
 #SBATCH --cpus-per-task=1
@@ -11,6 +11,7 @@
 #SBATCH --constraint=ib
 #SBATCH --job-name=TPS
 #SBATCH --mail-type=ALL
+#SBATCH --mail-user=osode@ut.edu
 #SBATCH --time=24:00:00
 
 echo "Start."
@@ -29,14 +30,14 @@ CP2K=/home/oosode/software/cp2k/cp2k/exe/Linux-x86-64-sangyun/cp2k.popt
 source /home/oosode/software/plumed2-ttmetad/sourceme.sh
 
 # Number of total nodes (should be divisible by two)
-NODES=160
+NODES=40
 NODES2=`expr $NODES / 2`
 
 #!!!!!!!!!!!
 #Variables!#
 #!!!!!!!!!!!
-index=1
-numpaths=101
+index=0
+numpaths=200
 ranscale=32767
 halfran=`expr $ranscale - 1`
 halfran=`expr $halfran / 2`
@@ -72,6 +73,7 @@ rm -f dt.org
 touch acc.txt
 touch h_basin.txt
 touch basin_evals.txt
+touch vmd.output
 
 #cp shootpt/blank shootpt/op1.out
 #cp shootpt/blank shootpt/op2.out
@@ -92,8 +94,8 @@ RANDOM=$SEED
 # xsc files with the pdbs to keep track of the lattice parameters.
 
 #ACTIN
-#actin=0 #F-actin flag
-actin=1 #G-actin flag
+actin=0 #F-actin flag
+#actin=1 #G-actin flag
 
 #Start loop over variable index
 while [ $index -le $numpaths ]
@@ -123,7 +125,7 @@ do
   rm -f back.*
   rm -f dt.*
   
-  rm FORWARD* BACKWARD* DT*  
+  rm FORWARD* BACKWARD* DT* SETUP* 
 
   if test $RANDOM -le $halfran
   then
@@ -172,8 +174,8 @@ do
   mpirun -n $NODES $CP2K md_rst.org > md_rst.log
 
   echo "Generate shooting restarts..."
-  large_steps=250
-  small_steps=5
+  large_steps=1000
+  small_steps=20
 
   python as.py -g $index $large_steps $small_steps -i SETUP-1.restart
 
@@ -185,7 +187,7 @@ do
 
   # print last traj and convert to pdb
   tail -55808 DT.$index-pos-1.xyz > DT.xyz
-  vmd -dispdev text -e dt.vmd
+  vmd -dispdev text -e dt.vmd >> vmd.output
 
   mv DT.xyz               ./output/crd/$index.dt.xyz
   mv $index.dt.coor       ./output/crd/.
@@ -202,8 +204,8 @@ do
   # print last traj and convert to pdb  
   tail -55808 FORWARD.$index-pos-1.xyz > FORWARD.xyz
   tail -55808 BACKWARD.$index-pos-1.xyz > BACKWARD.xyz
-  vmd -dispdev text -e forw.vmd
-  vmd -dispdev text -e back.vmd
+  vmd -dispdev text -e forw.vmd >> vmd.output
+  vmd -dispdev text -e back.vmd >> vmd.output
 
   #!!!!!!!!!!!!!!!!!!!!!!!
   # Evaluate some basins !
