@@ -185,7 +185,7 @@ def checkATP(atoms):
     
     Owater=[] # all other oxygens
     for atom in atoms:
-	if atom[1]=="O" and atom[0]!=5868 and atom[0]!=5869 and atom[0]!=5870:
+	if atom[1]=="O" and atom[0]!=5868 and atom[0]!=5869 and atom[0]!=5870 and atom[0]>5870:
             Owater.append([atom[2],atom[3],atom[4]])
 
     c1=[]
@@ -217,7 +217,7 @@ def checkADP(atoms):
 
     Owater=[] # all other oxygens
     for atom in atoms:
-        if atom[1]=="O" and atom[0]!=5868 and atom[0]!=5869 and atom[0]!=5870:
+        if atom[1]=="O" and atom[0]!=5868 and atom[0]!=5869 and atom[0]!=5870 and atom[0]>5870:
             Owater.append([atom[2],atom[3],atom[4]])
 
     Hwater=[] # all hydrogens
@@ -343,7 +343,7 @@ def basins_xyz(fpdb,bpdb):
     elif conclusive == 1:
         basin.write("Conclusive %d %d %d %d\n"%(haf[0],hbf[0],hab[0],hbb[0]))
     else:
-        print "That's wierd. Exiting..."
+        print "That's weird. Exiting..."
         exit(0)
 
     basin.close()
